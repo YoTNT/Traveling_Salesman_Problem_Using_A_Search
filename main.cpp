@@ -8,7 +8,7 @@ class AstarNode
 {
 	public:
 		int ID;
-		int numEdgeFromStar;
+		int numEdgeFromStart;
 		int gStar;	// the total cost from start node to this node
 		int hStar;	// the estimate cost from this node to a goal node
 		int fStar;	// gStar + hStar
@@ -24,7 +24,7 @@ class AstarNode
 AstarNode :: AstarNode()
 {
 	this->ID = 0;
-	this->numEdgeFromStar = 0;
+	this->numEdgeFromStart = 0;
 	this->gStar = 0;
 	this->hStar = 999;
 	this->fStar = 999;
@@ -35,7 +35,7 @@ AstarNode :: AstarNode()
 AstarNode :: AstarNode(int id)
 {
 	this->ID = id;
-	this->numEdgeFromStar = 0;
+	this->numEdgeFromStart = 0;
 	this->gStar = 0;
 	this->hStar = 0;
 	this->fStar = 0;
@@ -163,15 +163,16 @@ class AStarSearch
 		int computeHstar(AstarNode *, int);
 		int computeGstar(AstarNode *);
 		int computeFstar(AstarNode *);
-		bool IsOnCloseList(AstarNode *, AstarNode *);
+		bool IsOnCloseList(AstarNode *, AstarNode *&);
 		void OpenInsert(AstarNode *);
 		void printOpen(string);
 		void printClose(string);
 		AstarNode * OpenRemove();
 		void ClosePush(AstarNode *);
 		void CloseDelete(AstarNode *);
-		bool checkPath(AstarNode *);
-		void tracePath(AstarNode *, string);	// File name is needed
+		bool checkPath();
+		void tracePath(string);	// File name is needed
+		int sizeOfClose();
 };
 
 AStarSearch :: AStarSearch(int n, int s, int h)
@@ -248,11 +249,8 @@ void AStarSearch :: loadMatrix(string input_file_name, string output_file_name)
 		edges++;
 
 		// Creating linked list for median
-		cout << "Creating edgeNode e" << endl;
 		edgeNode* e = new edgeNode(edge);
-		cout << "Insert e to linked list" << endl;
 		el->insert(e);
-		cout << "Finishing insertion" << endl;
 
 		// Printing to output file
 		outFile << line;
@@ -260,7 +258,6 @@ void AStarSearch :: loadMatrix(string input_file_name, string output_file_name)
 
 	// Finding average
 	this->average = total / edges;
-	cout << "Going to find the median" << endl;
 	// Finding median
 	this->median = el->findEdge(edges / 2);
 
@@ -271,20 +268,6 @@ void AStarSearch :: loadMatrix(string input_file_name, string output_file_name)
 	
 	inFile.close();
 	outFile.close();
-
-	// Testing code
-	cout << "Content in costMatrix: " << endl;
-	for(int i = 1; i <= this->numNodes; i++)
-	{
-		for(int j = 1; j <= this->numNodes; j++)
-			cout << this->costMatrix[i][j] << "\t";
-		cout << endl;
-	}
-	cout << "# of edges: " << edges << endl;
-	cout << "Total cost: " << total << endl;
-	cout << "The minimum is: " << this->minimum << endl;
-	cout << "The average is: " << this->average << endl;
-	cout << "The median is: " << this->median << endl;
 
 	return;
 }
@@ -299,7 +282,7 @@ void AStarSearch :: copyChildList(int index)
 
 int AStarSearch :: computeHstar(AstarNode * node, int h)
 {
-	int remainder = this->numNodes - node->numEdgeFromStar;
+	int remainder = this->numNodes - node->numEdgeFromStart;
 	int result = 0;
 	switch(h)
 	{
@@ -326,14 +309,11 @@ int AStarSearch :: computeHstar(AstarNode * node, int h)
 // Total cost from source node to this current node
 int AStarSearch :: computeGstar(AstarNode *node)
 {
-	// Base case: Parent doesn't have any more parent
+	// No parent, it's the source node
 	if(node->parent == NULL)
-		return node->gStar;
-		
-	int thisID = node->ID;
-	int parentID = node->parent->ID;
-	int cost = this->costMatrix[parentID][thisID];
-	return (this->computeGstar(node->parent) + cost);
+		return 0;
+	else
+		return node->parent->gStar + this->costMatrix[node->parent->ID][node->ID];
 }
 
 int AStarSearch :: computeFstar(AstarNode *node)
@@ -372,7 +352,6 @@ void AStarSearch :: OpenInsert(AstarNode *node)
 	}
 
 	// The node need to put to the end of OPEN
-	ptr = ptr->next;
 	node->next = ptr->next;
 	ptr->next = node;	
 	return;
@@ -422,20 +401,149 @@ AstarNode * AStarSearch :: OpenRemove()
 	}
 	
 	// Reconnect the head before return
-	this->OpenList->next = ptr->next;
 	// Clean the next of the returning node
-	ptr->next = NULL;
+	this->OpenList->next = NULL;
 
 	return ptr;
 }
 
+bool AStarSearch :: IsOnCloseList(AstarNode *cNode, AstarNode *&oNode)
+{
+	AstarNode* ptr = this->CloseList;
+
+	while(ptr != NULL)
+	{
+		// CurrentNode is in the Close List
+		if(cNode->ID == ptr->ID)
+		{
+			oNode = ptr;
+			return true;
+		}
+		ptr = ptr->next;
+	}
+	// CurrentNode is not in the Close List
+	return false;
+}
+
+void AStarSearch :: CloseDelete(AstarNode *node)
+{
+	AstarNode *ptr = this->CloseList;
+
+	// If the first node in Close List is the node to found
+	// And the Close List is not empty
+	if(ptr != NULL and node->ID == ptr->ID)
+	{
+		this->CloseList = ptr->next;
+		return;
+	}
+
+	// Otherwise check the node next to the current checking node
+	// between the 2nd node to the (n-1)th node.
+	while(ptr->next != NULL)
+	{
+		// Node is found
+		if(node->ID == ptr->next->ID)
+		{
+			// Skip the found node
+			ptr->next = ptr->next->next;
+			return;
+		}
+		
+		ptr = ptr->next;
+	}
+
+	// No more node, but can't found the node
+	return;
+}
+
+void AStarSearch :: ClosePush(AstarNode *node)
+{
+	AstarNode* tail = this->CloseList;
+	node->next = tail;
+	this->CloseList = node;
+	
+	return;
+}
+
+void AStarSearch :: printClose(string output_file_name)
+{
+	string line = "*** CLOSE list ***\r\n";
+	line += "CLOSE -> ";
+     
+	AstarNode* ptr = this->CloseList;
+	while(ptr != NULL)
+	{   
+        line += "(" + std::to_string(ptr->ID) +
+        	    ", " + std::to_string(ptr->fStar) +
+	            ") -> ";
+      	ptr = ptr->next;
+    }
+    line += "NULL\r\n\r\n";
+    print_append(line, output_file_name);
+    
+    return;
+}
+
+bool AStarSearch :: checkPath()
+{
+	if(this->sizeOfClose() < this->numNodes)
+		return true;
+	else
+		return false;
+}
+
+void AStarSearch :: tracePath(string output_file_name)
+{
+	int total_cost = 0;
+	string line = "** The search result of the path:\r\n\r\n";
+	line += "Start from node " + std::to_string(this->start) + " using h" +
+			std::to_string(this->whichHFunction) + "* search\r\n\r\n";
+
+	AstarNode *ptr = this->CloseList;
+	int this_id, next_id;
+
+	int start_id = ptr->ID;
+
+	while(ptr != NULL and ptr->next != NULL)
+	{
+//		cout << "In while loop of checkPath" << endl;
+		this_id = ptr->ID;
+		next_id = ptr->next->ID;
+		line += std::to_string(this_id) + "\t";
+		line += std::to_string(next_id) + "\t";
+		total_cost += this->costMatrix[this_id][next_id];
+		line += std::to_string(this->costMatrix[this_id][next_id]) + "\r\n";
+	
+		ptr = ptr->next;
+	}
+
+	int end_id = ptr->ID;
+
+	line += std::to_string(end_id) + "\t";
+	line += std::to_string(start_id) + "\t";
+	total_cost += this->costMatrix[end_id][start_id];
+	line += std::to_string(this->costMatrix[end_id][start_id]) + "\r\n";
 
 
 
+	line += "\r\nThe total cost of the simple-path is " + std::to_string(total_cost) + "\r\n";
 
+	print_append(line, output_file_name);
 
+	return;
+}
 
-
+int AStarSearch :: sizeOfClose()
+{
+	int size = 0;
+	AstarNode* ptr = this->CloseList;
+	while(ptr != NULL)
+	{
+		size++;
+		ptr = ptr->next;
+	}
+	return size;
+}
 
 
 int main(int argc, char ** argv)
@@ -489,7 +597,7 @@ int main(int argc, char ** argv)
 
 	// Assignment source node
 	AstarNode* SNode = new AstarNode(startID);
-	SNode->numEdgeFromStar = currentStep;		// This step is important before doing computeHstar !!!!
+	SNode->numEdgeFromStart = currentStep;		// This step is important before doing computeHstar !!!!
 	SNode->hStar = s->computeHstar(SNode, h);
 	SNode->gStar = s->computeGstar(SNode);
 	SNode->fStar = s->computeFstar(SNode);
@@ -498,12 +606,54 @@ int main(int argc, char ** argv)
 
 	s->printOpen(argv[3]);
 
+	AstarNode* currentNode = SNode;
 
+	while(s->checkPath())
+	{
+		currentNode = s->OpenRemove();
 
+		int matrixIndex = currentNode->ID;
 
+		s->copyChildList(matrixIndex);
 
+		currentStep++;	// Making sure the kid has the right numEdgeFromStart
 
+		for(int childIndex = 1; childIndex <= s->numNodes; childIndex++)
+		{	
+			if(s->childAry[childIndex] > 0)
+			{
+				AstarNode* childNode = new AstarNode(childIndex);
+				childNode->numEdgeFromStart = currentStep; 	// Updating the numEdgeFromStart for 
+				childNode->hStar = s->computeHstar(childNode, h);
+				childNode->parent = currentNode;			// Updating parent of childNode 
+															// before using computeGstar function.
+															// Making sure every kid has parent.
+				childNode->gStar = s->computeGstar(childNode);
+				childNode->fStar = s->computeFstar(childNode);
 
+				AstarNode* oldNode = NULL;
+				if(!s->IsOnCloseList(childNode, oldNode))
+				{
+					s->OpenInsert(childNode);
+					s->printOpen(debugFileName);
+				}
+				else
+				{	
+					// Although childNode was processed, but this fStar is better
+					if(childNode->fStar < oldNode->fStar)
+					{	
+						s->CloseDelete(oldNode);
+						currentStep--;	// Take back a step
+						s->OpenInsert(childNode);
+						s->printOpen(debugFileName);
+					}
+				}
+			}
+		}
+		s->ClosePush(currentNode);
+		s->printClose(debugFileName);
+	}
+	s->tracePath(outputFileName);
 
 	return 0;
 }

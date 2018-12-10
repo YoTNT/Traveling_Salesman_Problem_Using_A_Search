@@ -1,0 +1,75 @@
+*** OPEN list ***
+OPEN -> dummy -> (2, 56) -> NULL
+
+*** OPEN list ***
+OPEN -> dummy -> (1, 72) -> NULL
+
+*** OPEN list ***
+OPEN -> dummy -> (3, 52) -> (1, 72) -> NULL
+
+*** OPEN list ***
+OPEN -> dummy -> (3, 52) -> (4, 57) -> (1, 72) -> NULL
+
+*** CLOSE list ***
+CLOSE -> (2, 56) -> NULL
+
+*** OPEN list ***
+OPEN -> dummy -> (1, 43) -> NULL
+
+*** OPEN list ***
+OPEN -> dummy -> (1, 43) -> (2, 48) -> NULL
+
+*** OPEN list ***
+OPEN -> dummy -> (1, 43) -> (2, 48) -> (4, 58) -> NULL
+
+*** CLOSE list ***
+CLOSE -> (3, 52) -> NULL
+
+*** OPEN list ***
+OPEN -> dummy -> (2, 73) -> NULL
+
+*** OPEN list ***
+OPEN -> dummy -> (3, 48) -> (2, 73) -> NULL
+
+*** OPEN list ***
+OPEN -> dummy -> (3, 48) -> (2, 73) -> (4, 75) -> NULL
+
+*** CLOSE list ***
+CLOSE -> (1, 43) -> NULL
+
+*** OPEN list ***
+OPEN -> dummy -> (2, 58) -> NULL
+
+*** OPEN list ***
+OPEN -> dummy -> (4, 54) -> (2, 58) -> NULL
+
+*** CLOSE list ***
+CLOSE -> (3, 48) -> (1, 43) -> NULL
+
+*** OPEN list ***
+OPEN -> dummy -> (2, 55) -> NULL
+
+*** OPEN list ***
+OPEN -> dummy -> (3, 46) -> (2, 55) -> NULL
+
+*** CLOSE list ***
+CLOSE -> (4, 54) -> (1, 43) -> NULL
+
+*** OPEN list ***
+OPEN -> dummy -> (2, 56) -> NULL
+
+*** OPEN list ***
+OPEN -> dummy -> (4, 52) -> (2, 56) -> NULL
+
+*** CLOSE list ***
+CLOSE -> (3, 46) -> (1, 43) -> NULL
+
+*** OPEN list ***
+OPEN -> dummy -> (2, 67) -> NULL
+
+*** CLOSE list ***
+CLOSE -> (4, 52) -> (3, 46) -> (1, 43) -> NULL
+
+*** CLOSE list ***
+CLOSE -> (2, 67) -> (4, 52) -> (3, 46) -> (1, 43) -> NULL
+

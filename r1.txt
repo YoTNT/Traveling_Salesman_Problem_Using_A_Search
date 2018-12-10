@@ -8,6 +8,16 @@
 3 4 6
 1 4 18
 
-** The start node is 3
+** The start node is 2
 ** h* function used is choice 1 or 2 or 3
 
+** The search result of the path:
+
+Start from node 2 using h1* search
+
+2	4	15
+4	3	6
+3	1	5
+1	2	30
+
+The total cost of the simple-path is 56
